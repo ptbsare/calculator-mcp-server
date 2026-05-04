@@ -1,5 +1,6 @@
 import argparse
 import math
+import re
 from typing import List, Tuple
 
 from mcp.server.fastmcp import FastMCP
@@ -7,7 +8,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sympy as sp
 from scipy import stats
-from sympy import symbols, solve, sympify, diff, oo, Sum
+from sympy import symbols, solve, diff, oo, Sum, Symbol
+from sympy.parsing.sympy_parser import parse_expr, standard_transformations
 
 # Create MCP Server
 app = FastMCP(
@@ -144,14 +146,15 @@ def solve_equation(equation: str) -> dict:
         - Powers are represented with ** (e.g., x**2, not x^2)
     """
     try:
-        x = symbols("x")
+        x = Symbol("x")
         # Split the equation into left and right sides
         parts = equation.split("=")
         if len(parts) != 2:
             return {"error": "Equation must contain an '=' sign"}
 
-        left = sympify(parts[0].strip())
-        right = sympify(parts[1].strip())
+        safe_locals = {"x": x}
+        left = parse_expr(parts[0].strip(), local_dict=safe_locals, transformations=standard_transformations)
+        right = parse_expr(parts[1].strip(), local_dict=safe_locals, transformations=standard_transformations)
 
         # Solve the equation
         solutions = solve(left - right, x)
@@ -195,8 +198,11 @@ def differentiate(expression: str, variable: str = "x") -> dict:
         - Only support for one variable at a time (implicit differentiation not supported)
     """
     try:
-        var = symbols(variable)
-        expr = sympify(expression)
+        if not re.fullmatch(r'[a-zA-Z]', variable):
+            return {"error": "Invalid variable name"}
+        var = Symbol(variable)
+        safe_locals = {variable: var}
+        expr = parse_expr(expression, local_dict=safe_locals, transformations=standard_transformations)
         result = diff(expr, var)
         return {"result": str(result)}
     except Exception as e:
@@ -238,8 +244,11 @@ def integrate(expression: str, variable: str = "x") -> dict:
         - Complex expressions may be returned in simplified form
     """
     try:
-        var = symbols(variable)
-        expr = sympify(expression)
+        if not re.fullmatch(r'[a-zA-Z]', variable):
+            return {"error": "Invalid variable name"}
+        var = Symbol(variable)
+        safe_locals = {variable: var}
+        expr = parse_expr(expression, local_dict=safe_locals, transformations=standard_transformations)
         result = sp.integrate(expr, var)
         return {"result": str(result)}
     except Exception as e:
@@ -642,10 +651,10 @@ def plot_function(
         - Multiplication must be explicitly indicated with * (e.g., 2*x, not 2x)
         - Powers are represented with ** (e.g., x**2, not x^2)
     """
-    x = sp.Symbol("x")
+    x = Symbol("x")
     try:
-        expression = sp.sympify(expression)
-        f = sp.lambdify(x, expression, "numpy")
+        expr = parse_expr(expression, local_dict={"x": x}, transformations=standard_transformations)
+        f = sp.lambdify(x, expr, "numpy")
         x_values = np.linspace(start, end, step)
         y_values = f(x_values)
         fig, ax = plt.subplots()
@@ -686,8 +695,8 @@ def summation(expression: str, start: int = 0, end: int = 10) -> dict:
         {'result': 385}
     """
     try:
-        x = sp.Symbol("x")
-        expr = sp.sympify(expression)
+        x = Symbol("x")
+        expr = parse_expr(expression, local_dict={"x": x}, transformations=standard_transformations)
         summation = sp.Sum(expr, (x, start, end))
         result = summation.doit()
         return {"result": int(result) if result.is_integer else float(result)}
@@ -712,8 +721,10 @@ def expand(expression: str) -> dict:
         {'result': 'x**2 + 2*x + 1'}
     """
     try:
-        x = sp.Symbol("x")
-        expanded_expression = sp.expand(expression)
+        x = Symbol("x")
+        safe_locals = {"x": x}
+        expr = parse_expr(expression, local_dict=safe_locals, transformations=standard_transformations)
+        expanded_expression = sp.expand(expr)
         return {"result": str(expanded_expression)}
     except Exception as e:
         return {"error": str(e)}
@@ -736,8 +747,10 @@ def factorize(expression: str) -> dict:
         {'result': '(x + 1)**2'}
     """
     try:
-        x = sp.Symbol("x")
-        factored_expression = sp.factor(expression)
+        x = Symbol("x")
+        safe_locals = {"x": x}
+        expr = parse_expr(expression, local_dict=safe_locals, transformations=standard_transformations)
+        factored_expression = sp.factor(expr)
         return {"result": str(factored_expression)}
     except Exception as e:
         return {"error": str(e)}
