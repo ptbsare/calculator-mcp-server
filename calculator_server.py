@@ -558,40 +558,42 @@ def matrix_determinant(matrix: List[List[float]]) -> dict:
 
 
 @app.tool()
-def vector_dot_product(vector_a: tuple[float], vector_b: tuple[float]) -> dict:
+def vector_dot_product(vector_a: List[float], vector_b: List[float]) -> dict:
     """
-    Multiplies two matrices.
+    Computes the dot product (scalar product) of two vectors.
 
     Args:
-        vector_a: The first vector as a list of lists.
-        vector_b: The second vector as a list of lists.
+        vector_a: The first vector as a list of floats.
+        vector_b: The second vector as a list of floats.
 
     Returns:
-        On success: {"result": <resulting vector>}
+        On success: {"result": <dot product value>}
         On error: {"error": <error message>}
 
     Examples:
         >>> vector_dot_product([1, 2], [7, 8])
         {'result': 23}
+        >>> vector_dot_product([1, 2, 3], [4, 5, 6])
+        {'result': 32}
     """
     try:
-        result = np.dot(vector_a, vector_b).tolist()
+        result = float(np.dot(vector_a, vector_b))
         return {"result": result}
     except Exception as e:
         return {"error": str(e)}
 
 
 @app.tool()
-def vector_cross_product(vector_a: tuple[float], vector_b: tuple[float]) -> dict:
+def vector_cross_product(vector_a: List[float], vector_b: List[float]) -> dict:
     """
-    Multiplies two matrices.
+    Computes the cross product of two 3-dimensional vectors.
 
     Args:
-        vector_a: The first vector as a list of lists.
-        vector_b: The second vector as a list of lists.
+        vector_a: The first vector as a list of floats (must be 3D).
+        vector_b: The second vector as a list of floats (must be 3D).
 
     Returns:
-        On success: {"result": <resulting vector>}
+        On success: {"result": <cross product vector>}
         On error: {"error": <error message>}
 
     Examples:
@@ -606,23 +608,25 @@ def vector_cross_product(vector_a: tuple[float], vector_b: tuple[float]) -> dict
 
 
 @app.tool()
-def vector_magnitude(vector: tuple[float]) -> dict:
+def vector_magnitude(vector: List[float]) -> dict:
     """
-    Multiplies two matrices.
+    Computes the magnitude (Euclidean norm) of a vector.
 
     Args:
-        vector: The first vector as a list of lists.
+        vector: The vector as a list of floats.
 
     Returns:
-        On success: {"result": <resulting vector>}
+        On success: {"result": <magnitude value>}
         On error: {"error": <error message>}
 
     Examples:
         >>> vector_magnitude([1, 2, 3])
         {'result': 3.7416573867739413}
+        >>> vector_magnitude([3, 4])
+        {'result': 5.0}
     """
     try:
-        result = np.linalg.norm(vector).tolist()
+        result = float(np.linalg.norm(vector))
         return {"result": result}
     except Exception as e:
         return {"error": str(e)}
